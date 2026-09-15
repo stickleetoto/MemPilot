@@ -1,3 +1,4 @@
+pub mod adaptive;
 pub mod optimizer;
 pub mod policy;
 pub mod pressure;
