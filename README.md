@@ -4,112 +4,97 @@
 
 > Don't clean memory. Manage pressure.
 
-MemPilot is an experimental Windows memory policy engine. Instead of chasing a lower "RAM used" number, it is designed to observe real memory pressure, protect active workloads, rank background processes, and intervene only when the system is actually under pressure.
+MemPilot is an experimental Windows memory-pressure governor. Instead of chasing a lower "RAM used" number, it observes physical and commit pressure, protects the foreground workload, profiles processes, and ranks background reclaim candidates.
 
 ## Status
 
-**Pre-alpha / v0.1 foundation**
+**v0.2.0 — functional observer + adaptive dry-run governor**
 
-The repository currently contains the policy/pressure-engine skeleton. Live Windows telemetry and memory-management actions are the next implementation milestone.
+MemPilot now has live Windows system/process telemetry, a pressure state machine with smoothing/hysteresis, adaptive in-run candidate scoring, JSON output, and a safe optimization planner.
 
-## Design goals
+**v0.2 does not mutate another process.** Active memory-priority changes and working-set trimming remain behind later validation gates.
 
-- Measure physical-memory and commit pressure instead of blindly clearing RAM.
-- Prefer low-risk policy changes before forced working-set trimming.
-- Protect foreground and explicitly allow-listed processes.
-- Use selective trimming only when pressure is high enough to justify it.
-- Measure page-fault/regression feedback after every intervention.
-- Keep aggressive or destructive behavior opt-in.
-- Be a small, auditable Windows utility rather than a permanent heavyweight service.
+## What works
 
-## Non-goals
+- Physical RAM / available RAM telemetry
+- Commit charge / commit limit
+- System cache and kernel pool visibility
+- Windows low-memory resource signal
+- Process enumeration and executable paths
+- Working set, peak working set, private commit, page-fault counters
+- Stable process identity using PID + creation time
+- Foreground-process protection
+- Pressure score: `NORMAL / WATCH / PRESSURE / HIGH / CRITICAL`
+- Candidate ranking with page-fault risk feedback
+- `status`, `analyze`, `watch`, and `optimize --dry-run`
+- JSON output for status/analyze/optimization plans
 
-MemPilot is **not** intended to:
+## CLI
 
-- purge standby/file cache just to make the free-RAM number look larger;
-- disable the Windows page file as a "performance tweak";
-- repeatedly call working-set trim APIs on every process;
-- terminate applications automatically in v0.1;
-- claim performance improvements without before/after measurements.
+```powershell
+cargo run -- status
+cargo run -- status --json
 
-## Planned control loop
+cargo run -- analyze --top 15
+cargo run -- analyze --top 15 --json
 
-```text
-Telemetry
-   |
-   v
-Pressure Engine -----> Process Profiler
-   |                         |
-   +-----------+-------------+
-               v
-          Policy Engine
-               |
-     +---------+---------+
-     |         |         |
-   Observe   Demote    Selective
-             memory      trim
-            priority
-     \         |         /
-      +--------+--------+
-               v
-         Feedback Loop
-               |
-         regression?
-          /        \
-        yes         no
-        |            |
-   back off       keep policy
+cargo run -- watch --interval 2 --count 30
+
+cargo run -- optimize --dry-run --top 10
+cargo run -- optimize --dry-run --top 10 --json
 ```
 
-## Pressure model
-
-The initial engine uses a provisional `0..100` pressure score from:
-
-- physical memory pressure;
-- committed-memory pressure;
-- hard-page-fault activity.
-
-The heuristic is intentionally isolated so it can be benchmarked and replaced without rewriting the rest of the system.
+Example control loop:
 
 ```text
-0-29    NORMAL
-30-54   WATCH
-55-74   PRESSURE
-75-89   HIGH
-90-100  CRITICAL
+Windows telemetry
+      |
+      v
+Pressure Engine
+      |
+      +------> Process profiler
+      |              |
+      +--------------+
+             |
+             v
+      Candidate ranking
+             |
+             v
+      Dry-run policy plan
+             |
+             v
+      Adaptive feedback
 ```
 
-## Repository layout
+## Safety rules
 
-```text
-src/
-  telemetry/   System and process observations
-  pressure/    Pressure scoring/classification
-  policy/      Safe policy decisions
-  optimizer/   Action planning/execution boundary
-docs/
-  ARCHITECTURE.md
-  ROADMAP.md
-```
+MemPilot v0.2 will **not**:
+
+- purge standby/file cache to make free-RAM screenshots look better;
+- disable or resize the Windows page file;
+- repeatedly trim every process;
+- terminate applications;
+- modify process memory priority;
+- execute a working-set trim.
+
+`mempilot optimize` requires `--dry-run` and reports what a future governor could consider doing.
 
 ## Development
 
-Requires a recent stable Rust toolchain.
+Requires a recent stable Rust toolchain. Windows is the live telemetry target.
 
 ```bash
-cargo fmt --check
+cargo fmt --all -- --check
 cargo clippy --all-targets -- -D warnings
-cargo test
-cargo run -- status
+cargo test --all-targets
 ```
 
-The live optimizer will target Windows. Pure policy logic should remain testable without invoking Windows memory-management APIs.
+See:
 
-## Safety rule
-
-**No action should be considered an optimization unless MemPilot can measure its effect.**
-
-Every future mutating action should support dry-run, cooldown, and rollback/backoff behavior where applicable.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- [`docs/TECH_RESEARCH.md`](docs/TECH_RESEARCH.md)
+- [`docs/BENCHMARK_PLAN.md`](docs/BENCHMARK_PLAN.md)
+- [`docs/V0_2_STATUS.md`](docs/V0_2_STATUS.md)
 
 ## Licensing
 

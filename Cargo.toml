@@ -1,9 +1,21 @@
 [package]
 name = "mempilot"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Adaptive memory pressure manager for Windows"
 repository = "https://github.com/stickleetoto/MemPilot"
 publish = false
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_Memory",
+    "Win32_System_ProcessStatus",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }
