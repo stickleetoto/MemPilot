@@ -24,9 +24,7 @@ impl SystemSnapshot {
             return 0.0;
         }
 
-        let available = self
-            .available_physical_bytes
-            .min(self.total_physical_bytes) as f64;
+        let available = self.available_physical_bytes.min(self.total_physical_bytes) as f64;
         let total = self.total_physical_bytes as f64;
         (1.0 - available / total).clamp(0.0, 1.0)
     }
