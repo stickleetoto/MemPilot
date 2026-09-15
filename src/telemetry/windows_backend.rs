@@ -18,8 +18,8 @@ use windows_sys::Win32::{
         },
         SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX},
         Threading::{
-            GetProcessTimes, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
-            PROCESS_QUERY_INFORMATION, PROCESS_VM_READ,
+            GetProcessTimes, OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_INFORMATION,
+            PROCESS_VM_READ, QueryFullProcessImageNameW,
         },
     },
     UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId},
@@ -104,13 +104,7 @@ unsafe fn enumerate_pids() -> io::Result<Vec<u32>> {
 }
 
 unsafe fn inspect_process(pid: u32, foreground_pid: u32) -> Option<ProcessSnapshot> {
-    let handle = unsafe {
-        OpenProcess(
-            PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-            0,
-            pid,
-        )
-    };
+    let handle = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid) };
 
     if handle.is_null() {
         return None;
@@ -123,7 +117,8 @@ unsafe fn inspect_process(pid: u32, foreground_pid: u32) -> Option<ProcessSnapsh
         let counters_ok = unsafe {
             K32GetProcessMemoryInfo(
                 handle,
-                (&mut counters as *mut PROCESS_MEMORY_COUNTERS_EX).cast::<PROCESS_MEMORY_COUNTERS>(),
+                (&mut counters as *mut PROCESS_MEMORY_COUNTERS_EX)
+                    .cast::<PROCESS_MEMORY_COUNTERS>(),
                 size_of::<PROCESS_MEMORY_COUNTERS_EX>() as u32,
             )
         };
@@ -164,12 +159,7 @@ unsafe fn process_image_path(handle: windows_sys::Win32::Foundation::HANDLE) -> 
     let mut size = buffer.len() as u32;
 
     if unsafe {
-        QueryFullProcessImageNameW(
-            handle,
-            PROCESS_NAME_WIN32,
-            buffer.as_mut_ptr(),
-            &mut size,
-        )
+        QueryFullProcessImageNameW(handle, PROCESS_NAME_WIN32, buffer.as_mut_ptr(), &mut size)
     } == 0
     {
         return None;
@@ -178,9 +168,7 @@ unsafe fn process_image_path(handle: windows_sys::Win32::Foundation::HANDLE) -> 
     Some(String::from_utf16_lossy(&buffer[..size as usize]))
 }
 
-unsafe fn process_creation_time(
-    handle: windows_sys::Win32::Foundation::HANDLE,
-) -> Option<u64> {
+unsafe fn process_creation_time(handle: windows_sys::Win32::Foundation::HANDLE) -> Option<u64> {
     let mut creation: FILETIME = unsafe { zeroed() };
     let mut exit: FILETIME = unsafe { zeroed() };
     let mut kernel: FILETIME = unsafe { zeroed() };
@@ -218,11 +206,7 @@ unsafe fn query_low_memory_signal() -> Option<bool> {
     let ok = unsafe { QueryMemoryResourceNotification(handle, &mut state) };
     let _ = unsafe { CloseHandle(handle) };
 
-    if ok == 0 {
-        None
-    } else {
-        Some(state != 0)
-    }
+    if ok == 0 { None } else { Some(state != 0) }
 }
 
 fn unix_ms() -> u64 {
