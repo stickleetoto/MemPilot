@@ -1,5 +1,5 @@
 use crate::{
-    policy::{action_for, Candidate, PolicyAction},
+    policy::{Candidate, PolicyAction, action_for},
     pressure::PressureAssessment,
 };
 use serde::Serialize;
