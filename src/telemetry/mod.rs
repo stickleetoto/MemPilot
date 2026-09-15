@@ -59,7 +59,7 @@ pub struct ProcessSnapshot {
 pub fn system_snapshot() -> io::Result<SystemSnapshot> {
     #[cfg(windows)]
     {
-        return windows_backend::system_snapshot();
+        windows_backend::system_snapshot()
     }
 
     #[cfg(not(windows))]
@@ -74,7 +74,7 @@ pub fn system_snapshot() -> io::Result<SystemSnapshot> {
 pub fn process_snapshots() -> io::Result<Vec<ProcessSnapshot>> {
     #[cfg(windows)]
     {
-        return windows_backend::process_snapshots();
+        windows_backend::process_snapshots()
     }
 
     #[cfg(not(windows))]
