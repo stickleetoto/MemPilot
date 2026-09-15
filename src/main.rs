@@ -1,8 +1,8 @@
 use std::{env, process::ExitCode, thread, time::Duration};
 
 use mempilot::{
-    adaptive::AdaptiveTracker, optimizer, policy, pressure::PressureEngine, telemetry, NAME,
-    VERSION,
+    NAME, VERSION, adaptive::AdaptiveTracker, optimizer, policy, pressure::PressureEngine,
+    telemetry,
 };
 
 fn print_help() {
@@ -67,7 +67,10 @@ fn command_status(args: &[String]) -> Result<(), String> {
     }
 
     println!("{NAME} {VERSION}");
-    println!("Pressure: {} ({:.1}/100)", assessment.level, assessment.smoothed_score);
+    println!(
+        "Pressure: {} ({:.1}/100)",
+        assessment.level, assessment.smoothed_score
+    );
     println!(
         "Physical: {:.1}% used | {:.1} GiB available / {:.1} GiB total",
         assessment.physical_pressure * 100.0,
@@ -193,7 +196,10 @@ fn command_optimize(args: &[String]) -> Result<(), String> {
         return Ok(());
     }
 
-    println!("Pressure: {} ({:.1}/100)", plan.pressure.level, plan.pressure.smoothed_score);
+    println!(
+        "Pressure: {} ({:.1}/100)",
+        plan.pressure.level, plan.pressure.smoothed_score
+    );
     println!("Plan: {:?}", plan.action);
     println!("Reason: {}", plan.reason);
     println!("System mutation: NO (v0.2 safety gate)");
