@@ -1,0 +1,9 @@
+[package]
+name = "mempilot"
+version = "0.1.0"
+edition = "2024"
+description = "Adaptive memory pressure manager for Windows"
+repository = "https://github.com/stickleetoto/MemPilot"
+publish = false
+
+[dependencies]
