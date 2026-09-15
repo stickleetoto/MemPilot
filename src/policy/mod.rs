@@ -47,7 +47,11 @@ pub fn rank_candidates(
         right
             .score
             .total_cmp(&left.score)
-            .then_with(|| right.expected_reclaim_bytes.cmp(&left.expected_reclaim_bytes))
+            .then_with(|| {
+                right
+                    .expected_reclaim_bytes
+                    .cmp(&left.expected_reclaim_bytes)
+            })
             .then_with(|| left.pid.cmp(&right.pid))
     });
     candidates
@@ -67,12 +71,13 @@ fn score_candidate(
         return None;
     }
 
-    let reclaim_base = process
-        .working_set_bytes
-        .min(process.private_commit_bytes.max(process.working_set_bytes / 4));
+    let reclaim_base = process.working_set_bytes.min(
+        process
+            .private_commit_bytes
+            .max(process.working_set_bytes / 4),
+    );
 
-    let size_score =
-        (reclaim_base as f64 / (1024.0 * 1024.0 * 1024.0)).clamp(0.0, 1.0) * 65.0;
+    let size_score = (reclaim_base as f64 / (1024.0 * 1024.0 * 1024.0)).clamp(0.0, 1.0) * 65.0;
 
     let current_fault_risk = delta
         .map(|value| (value.page_fault_delta as f64 / 2_000.0).clamp(0.0, 1.0))
