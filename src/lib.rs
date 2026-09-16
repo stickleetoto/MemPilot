@@ -1,4 +1,5 @@
 pub mod adaptive;
+pub mod history;
 pub mod optimizer;
 pub mod policy;
 pub mod pressure;
